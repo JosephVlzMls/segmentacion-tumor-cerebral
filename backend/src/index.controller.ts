@@ -21,9 +21,9 @@ class IndexController {
 	}
 
 	segment(request: Request, response: any) {
-		execSync('octave octave/img_segment_' + request.body.type + '.m');
+		var stdout = execSync('octave octave/img_segment_' + request.body.type + '.m');
 		var image = fs.readFileSync('octave/upload/segmentation.png');
-		response.send({status: true, image: image});
+		response.send({status: true, image: image, stdout: stdout.toString()});
 	}
 
 }

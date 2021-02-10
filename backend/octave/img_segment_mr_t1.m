@@ -62,6 +62,12 @@ function U = img_otsu(I)
 	U = im2bw(I, k / 255);
 endfunction
 
+function Area = img_area(img_tumor)
+	ar = sum(sum(img_tumor));
+	ar = sqrt(ar);
+	Area = ar*0.264;
+end
+
 function sz = size_structuring_element(I)
 	[n, m] = size(I);
 	sz = floor(sqrt(min(n, m)) / 2);	
@@ -133,5 +139,7 @@ sz = size_structuring_element(I0);
 [I1, M1] = img_clean_background(I0, sz);
 [I2, M2] = img_remove_skull(I1, M1, sz);
 M3 = img_segment(I2, sz);
+
+disp(img_area(M3));
 
 imwrite(M3, "octave/upload/segmentation.png");

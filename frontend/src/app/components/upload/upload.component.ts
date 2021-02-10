@@ -11,6 +11,7 @@ import { UploadService } from '../../services/upload.service';
 export class UploadComponent implements OnInit {
 
   file: File = null;
+  area: string = null;
   type: string = null;
   view: string = null;
   preview: SafeUrl = null;
@@ -56,6 +57,7 @@ export class UploadComponent implements OnInit {
     var imageType = this.type + (this.weighing == null ? '' : '_' + this.weighing);
     this.uploadService.segment(imageType).subscribe((res) => {
       this.view = 'segmentation';
+      this.area = res['stdout'];
       this.segmentation = this.decodeImage(res['image'].data);
       this.segmenting = false;
     });
