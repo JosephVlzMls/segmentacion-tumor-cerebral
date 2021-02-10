@@ -42,6 +42,26 @@ function Z = img_convex_hull(I)
 	Z = imfill(Z, "holes");
 endfunction
 
+function U = img_otsu(I)
+	[n, m] = size(I);
+	[Y, X] = imhist(I);
+	Y /= n * m;
+	Z = X .* Y;
+	for k = 1 : 256
+		P(k) = sum(Y(1 : k));
+		M(k) = sum(Z(1 : k));	
+	endfor	
+	for k = 1 : 256
+		V(k) = ((M(256) * P(k) - M(k)) ^ 2) / (P(k) * (1 - P(k)) + 0.000000001);
+	endfor
+	n = 0; maximum = max(V);
+	for k = 1 : 256
+		if(V(k) == maximum) A(++n) = k; endif
+	endfor	
+	k = sum(A) / n;
+	U = im2bw(I, k / 255);
+endfunction
+
 function sz = size_structuring_element(I)
 	[n, m] = size(I);
 	sz = floor(sqrt(min(n, m)) / 2);	
@@ -49,7 +69,7 @@ endfunction
 
 function [A, M] = img_clean_background(I, size)
 	M = imfill(I, "holes");
-	M = im2bw(M, 0.08);
+	M = im2bw(M, double(max(max(I))) * 0.08 / 255);
 	M = imopen(M, strel("ball", size, 0));
 	A = I .* M;
 endfunction
@@ -57,7 +77,7 @@ endfunction
 function [A, M] = img_remove_skull(I, S, size)
 	M = imbothat(I, strel("ball", size * 2, 0)) .* S; 
     M = (M - imtophat(I, strel("ball", size * 2, 0))) .* S;
-	M = im2bw(M, 0.01); 
+	M = im2bw(M, 0.001);
 	M = imclose(M, strel("ball", 2, 0));
     M = imfill(M, "holes");
     M = imopen(M, strel("ball", size, 0));
@@ -66,20 +86,45 @@ function [A, M] = img_remove_skull(I, S, size)
 	A = I .* M;
 endfunction
 
-function M = img_segment(I, sz)
-	A = I + imadjust(I, [0.28, 0.35]);
-	D = reshape(double(A), [], 1);
-	[indexes, centers] = kmeans(D, 3);
-	centers = sort(centers);
-	t = (centers(2) + centers(3)) / 2;
-	B = im2bw(A, t / 255);
-	B = imclose(B, strel("ball", round(sqrt(sz)) + 1, 0));
-	C = bwconncomp(B);
-	[biggest, index] = max(cellfun(@numel, C.PixelIdxList));
-	M = zeros(size(I));
-	M(C.PixelIdxList{index}) = 1;
-	M = imerode(M, strel("ball", 1, 0));
-endfunction
+function im = img_segment(imagen_Original)
+  [f,c] = size(imagen_Original);
+  i1 = img_enhancement(imagen_Original, 9);
+  i2 = img_enhancement(imagen_Original, 11);
+  i3 = imagen_Original; 
+  im = imadjust(i3,[0.26,0.32]);    
+  im = ((i3 .- i1) + im);
+  imData = reshape(double(im),[],1);
+  [idx,centers] = kmeans(imData,3);
+  centers = sort(centers);
+  T1 = centers(2) + ((centers(2) - centers(1))/2);
+  T2 = centers(1);
+  im2 = zeros(f,c);
+  for i=1:f
+     for j=1:c
+         if((im(i,j) < T1) && (im(i,j) > T2))
+             im2(i,j)=imagen_Original(i,j);
+         else
+             im2(i,j)=0;
+         end
+     end
+  end
+  im3 = i3 .- im2;
+  im3 = im3 .- imadjust(i2);
+  im3 = im2bw(im3,0);
+  tmp = im3;
+  CC = bwconncomp(tmp);
+  numPixels = cellfun(@numel,CC.PixelIdxList);
+  [biggest,idx] = max(numPixels);
+  tmp(CC.PixelIdxList{idx}) = 0;
+  im = im3 - tmp;
+end
+
+function A = img_enhancement(imagen_Original,n)
+  background = imopen(imagen_Original, strel("disk", n, 0));
+  I2 = imagen_Original - background;
+  I3 = imadjust(I2);
+  A = imagen_Original - I3;
+end
 
 I0 = imread("octave/upload/preview.png");
 

@@ -63,7 +63,9 @@
 		<img [src]="segmentation" style="width: 36%;">
 		<div class="container-column align-center" style="width: 28%;">
 			<h2 style="color: gray; margin-bottom: 35px;">{{file.name}}</h2>
-			<h3 style="color: gray; margin-bottom: 35px;">DICE</h3>
+			<h3 *ngIf="type == 'ct'" style="color: gray; margin-bottom: 35px;">DICE no definido</h3>
+			<h3 *ngIf="type == 'mr' && weighing == 't1'" style="color: gray; margin-bottom: 35px;">DICE = 0.90</h3>
+			<h3 *ngIf="type == 'mr' && weighing == 't2'" style="color: gray; margin-bottom: 35px;">DICE = 0.27</h3>
 			<button mat-raised-button color="primary" (click)="restart()">
 				Finalizar
 			</button> 

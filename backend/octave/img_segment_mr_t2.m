@@ -49,22 +49,10 @@ endfunction
 
 function [A, M] = img_clean_background(I, size)
 	M = imfill(I, "holes");
-	M = im2bw(M, 0.08);
+	M = im2bw(M, double(max(max(I))) * 0.08 / 255);
 	M = imopen(M, strel("ball", size, 0));
 	A = I .* M;
 endfunction
-
-%{
-function [A, M] = img_remove_skull(I, S, size)
-	M = (255 - I) .* S; 
-	N = (1 - im2bw(M, 0.85)) .* S;
-	M = (1 - im2bw(M, (double(max(max(M))) * 0.8) / 255)) .* S; 
-	M = imopen(M, strel("ball", size, 0));
-	M = imclose(M, strel("ball", size * 2, 0));
-	M = imfill(M, "holes");
-	A = I .* M;
-endfunction
-%}
 
 function [A, M] = img_remove_skull(I, S, sz)
 	M1 = (255 - I) .* S;
@@ -89,19 +77,34 @@ function [A, M] = img_remove_skull(I, S, sz)
 	A = I .* M;
 endfunction
 
-function M = img_segment(I, sz)
-	A = I + imadjust(I, [0.6, 0.75]);
-	D = reshape(double(A), [], 1);
-	[indexes, centers] = kmeans(D, 4); 
-	centers = sort(centers);
-	t = (centers(4) + centers(3)) / 2;
-	B = im2bw(I, t / 255); 
-	B = imopen(B, strel("ball", round(sqrt(sz)) - 1, 0)); 
-	C = bwconncomp(B);
-	[biggest, index] = max(cellfun(@numel, C.PixelIdxList));
-	M = zeros(size(I));
-	M(C.PixelIdxList{index}) = 1;
-endfunction
+function bw2 = img_segment(imagen_Original)
+    [f, c] = size(imagen_Original);
+    i1 = img_enhancement(imagen_Original, 9);
+    im = imadjust(i1, [0.6,0.75]);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%% Segmentation k-means %%%%%%%%%%%%%%%%%%%%%%%%%
+    imData = reshape(double(imagen_Original + im),[],1);
+    [idx,centers] = kmeans(imData,4);
+    imidx = reshape(idx,size(imagen_Original));
+    centers = sort(centers);
+    T1 = centers(4) - ((centers(4) - centers(3))/2);
+	im = im2bw(imagen_Original, T1 / 255);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    bw2 = imerode(im, strel('disk', 3, 0));
+    bw2 = imdilate(bw2,strel('disk', 3, 0)); 
+    im3 = bw2;
+    CC = bwconncomp(im3);
+    numPixels = cellfun(@numel,CC.PixelIdxList);
+    [biggest,idx] = max(numPixels);
+    im3(CC.PixelIdxList{idx}) = 0;
+    bw2 = bw2 - im3;
+end
+
+function A = img_enhancement(I, n)
+  background = imopen(I, strel("disk", n, 0));
+  I2 = I - background;
+  I3 = imadjust(I2);
+  A = I - I3;
+end
 
 I0 = imread("octave/upload/preview.png");
 
