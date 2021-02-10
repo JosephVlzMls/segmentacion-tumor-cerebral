@@ -1,0 +1,73 @@
+<mat-toolbar class="h-10" color="primary">
+	<mat-icon style="margin-right: 20px;">psychology</mat-icon>
+	<span>Segmentación automática de tumores cerebrales</span>
+</mat-toolbar>
+
+<div class="container-column align-center h-90">
+
+	<div *ngIf="file == null" class="container-column align-center w-50 h-40" style="border-style: dashed; border-color: gray; border-width: 3px;">
+		<h2 style="color: gray; margin-bottom: 35px;">Selecciona un archivo</h2>
+		<input type="file" id="explorer" style="display: none;" (change)="onFileChange($event)">
+		<button mat-raised-button color="primary" (click)="onExplore()">
+			Explorar
+		</button> 
+	</div>
+
+	<div *ngIf="file != null && preview == null" class="container-column align-center w-50 h-40" style="border-style: dashed; border-color: gray; border-width: 3px;">
+		<h2 style="color: gray; margin-bottom: 35px;">Subiendo {{file.name}}</h2>
+		<div class="container-colum w-70">
+			<mat-progress-bar mode="indeterminate"></mat-progress-bar>
+		</div>
+	</div>
+
+	<div *ngIf="preview != null && segmentation == null" class="container-row align-center w-50" style="border-style: dashed; border-color: gray; border-width: 3px; padding: 25px; padding-right: 0px;">
+		<img [src]="preview" style="width: 50%;">
+		<div *ngIf="!segmenting" class="container-column align-center w-50 h-100">
+			<h2 style="color: gray; margin-bottom: 35px;">{{file.name}}</h2>
+			<div class="container-column w-100">
+				<mat-form-field appearance="fill" class="w-80">
+					<mat-label>Tipo de imagen</mat-label>
+					<mat-select [disabled]="extension == 'dicom'" [(value)]="type">
+						<mat-option value="mr">Resonancia magnética</mat-option>
+						<mat-option value="ct" (click)="weighing = null">Tomografía computarizada</mat-option>
+					</mat-select>
+				</mat-form-field>
+				<mat-form-field *ngIf="type == 'mr'" appearance="fill" class="w-80">
+					<mat-label>Ponderada en</mat-label>
+					<mat-select [disabled]="extension == 'dicom'" [(value)]="weighing">
+						<mat-option value="t1">T1</mat-option>
+						<mat-option value="t2">T2</mat-option>
+					</mat-select>
+				</mat-form-field>
+			</div>
+			<div class="container-row" style="margin-top: 35px;">
+				<button mat-raised-button color="warn" (click)="restart()">
+					Borrar
+				</button> 
+				<button mat-raised-button color="primary" (click)="segment()" [disabled]="type == null || (type == 'mr' && weighing == null)" style="margin-left: 15px;">
+					Segmentar
+				</button> 
+			</div>
+		</div>
+		<div *ngIf="segmenting" class="container-column align-center w-50 h-100">
+			<h2 style="color: gray; margin-bottom: 35px;">Procesando</h2>
+			<div class="container-colum w-80">
+				<mat-progress-bar mode="indeterminate" mode="query"></mat-progress-bar>
+			</div>
+			<h3 style="color: gray; margin-top: 15px;">Espere un momento</h3>
+		</div>
+	</div>
+
+	<div *ngIf="preview != null && segmentation != null" class="container-row align-center w-70" style="border-style: dashed; border-color: gray; border-width: 3px; padding: 25px; padding-right: 0px;">
+		<img [src]="preview" style="width: 36%; margin-right: 25px;">
+		<img [src]="segmentation" style="width: 36%;">
+		<div class="container-column align-center" style="width: 28%;">
+			<h2 style="color: gray; margin-bottom: 35px;">{{file.name}}</h2>
+			<h3 style="color: gray; margin-bottom: 35px;">DICE</h3>
+			<button mat-raised-button color="primary" (click)="restart()">
+				Finalizar
+			</button> 
+		</div>
+	</div>
+
+</div>
